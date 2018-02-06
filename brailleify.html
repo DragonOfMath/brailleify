@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv='Content-Type' charset='utf-8' />
+		<title>Image-to-Braille Generator</title>
+		<style>
+		.empty {
+		  border: 2px dashed gray;
+		}
+		.input {
+		  border: none;
+		}
+		.settings {
+		  margin: 10px 0;
+		}
+		textarea {
+		  width: 100%;
+		  height: 400px;
+		  resize: vertical;
+		}
+		</style>
+	</head>
+	<body>
+		<h1>Image-to-Braille Generator</h1>
+		<div>
+		  Input File (Or drag-n-drop below):
+		  <input id='file' type='file'><br>
+		  <canvas id='input' class='empty'></canvas>
+		</div>
+		<div class='settings'>
+		  Kernel Scale:
+		  <input id='scale' type='number' min='2' max='20' value='6' step='2'><br>
+		  Threshold:
+		  <input id='threshold' type='range' min='1' max='255' value='100'><br>
+		  Invert:
+		  <input id='invert' type='checkbox'><br>
+		  Fix Alignment:
+		  <input id='align' type='checkbox' checked='checked'><br>
+		</div>
+		<div>
+		  <textarea id='output'></textarea>
+		</div>
+		<script>
+var canvas    = document.querySelector('canvas');
+var ctx       = canvas.getContext('2d');
+var fileinput = document.getElementById('file');
+var scale     = document.getElementById('scale');
+var threshold = document.getElementById('threshold');
+var align     = document.getElementById('align');
+var output    = document.getElementById('output');
+
+canvas.addEventListener('dragover', function(e) {
+	e.preventDefault();
+});
+canvas.addEventListener('dragenter', function(e) {
+	canvas.style.border = '3px dashed blue';
+});
+canvas.addEventListener('dragleave', function(e) {
+	canvas.style.border = '';
+});
+canvas.addEventListener('drop', function(e) {
+	e.preventDefault();
+	canvas.style.border = '';
+	loadImage(e.dataTransfer.files[0], brailleify);
+});
+fileinput.addEventListener('change', function(e) {
+	loadImage(e.target.files[0], brailleify);
+});
+scale.addEventListener('change',    brailleify);
+threshold.addEventListener('input', brailleify);
+align.addEventListener('change',    brailleify);
+invert.addEventListener('change',   brailleify);
+
+function loadImage(file, callback) {
+	if (!file.type.match(/image.*/)) {
+		return alert("File rejected: "+file.name+' type: '+file.type+"\nAccepted file types: .jpg, .png, .gif");
+	}
+	let f = new FileReader();
+	f.onload = function(e) { 
+		let image = new Image();
+		image.onload = function() {
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+			canvas.width = image.width;
+			canvas.height = image.height;
+			ctx.drawImage(image,0,0,image.width,image.height);
+			canvas.className = 'input';
+			callback(image);
+		};
+		image.src = e.target.result;
+	};
+	f.readAsDataURL(file);
+}
+
+const KERNEL = [0,3,1,4,2,5,6,7];
+
+function brailleify() {
+	if (canvas.className == 'empty') return;
+	var image = ctx.getImageData(0, 0, canvas.width, canvas.height),
+		w = image.width,
+		h = image.height,
+		a   = align.checked,   // Fix alignment issue with empty braille
+		inv = invert.checked,  // Switch the dark/light values
+		th = +threshold.value, // the maximum value for darkness
+		kw = +scale.value,     // kernel width in pixels
+		kh = kw * 2,           // kernel height in pixels
+		kc = kw / 2,           // kernel cell size
+		ka = kc * kc,          // kernel cell area
+		result = '',
+		kernel,cell,value,
+		x,y,kx,ky,ox,oy,cx,cy,pos,i;
+	
+	for (y = 0; y < h; y += kh) {
+		for (x = 0; x < w; x += kw) {
+			kernel = [];
+			
+			for (ky = 0; ky < kh; ky += kc) {
+				oy = y + ky;
+				for (kx = 0; kx < kw; kx += kc) {
+					ox = x + kx;
+					cell = [0,0,0];
+					
+					for (cy = 0; cy < kc; ++cy) {
+						for (cx = 0; cx < kc; ++cx) {
+							pos = 4 * ((oy + cy) * w + (ox + cx));
+							for (i = 0; i < 3; i++) {
+								cell[i] += ~~image.data[pos+i];
+							}
+						}
+					}
+					
+					for (i = 0; i < 3; ++i) {
+						cell[i] = Math.floor(cell[i] / ka);
+					}
+					
+					// https://en.wikipedia.org/wiki/Relative_luminance
+					value = 0.2126 * cell[0] + 0.7152 * cell[1] + 0.0722 * cell[2];
+					kernel.push(value);
+				}
+			}
+			
+			value = 0;
+			for (var i of KERNEL) if (kernel[i] < th) value += Math.pow(2,i);
+			if (inv) value = 0xFF - value;
+			if (a && value == 0) value = 0x80;
+			result += String.fromCodePoint(0x2800 + value);
+		}
+		result += '\n';
+	}
+	
+	output.value = result;
+}
+		</script>
+	</body>
+</html>
