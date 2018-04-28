@@ -14,7 +14,7 @@ function brailleify(image, options = {})
 * `options` is an object with the following options:
   * `align: Boolean` uses a non-space braille character to keep the image aligned vertically. Default is `true`.
   * `invert: Boolean` switches the mapping of braille characters so darker regions are mapped to fewer dots, and vice versa. Default is `false`.
-  * `thresold: Normal` affects the overall "shade" of the braille. Default is `0.5`.
+  * `thresold: Integer` affects the overall "shade" of the braille, ranging from 0-255. Default is `120`.
   * `scale: Integer` determines the scale of the image pixels to the braille dots. 1 means 1 pixel per dot, 2 means 4 pixels per dot, and so on. Default is `4`.
 
 # Example
@@ -26,6 +26,7 @@ Jimp.read('./joy.png')
 	.then(console.log);
 ```
 
+```
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠏⠃⠁⢀⢀⢀⢀⢀⢀⢀⢀⢀⠃⠋⠯⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⠟⠇⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⢀⠃⠯⣿⣿⣿⣿⣿⣿⣿
@@ -44,3 +45,4 @@ Jimp.read('./joy.png')
 ⣿⣿⣿⣿⣿⣿⣽⣙⡰⡀⢀⢀⢀⢀⢀⠃⠃⠃⠃⠃⠃⢀⢀⢀⢀⢀⢀⡠⣦⣽⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣙⣤⠰⣀⡀⢀⢀⢀⢀⢀⢀⢀⣀⡠⢘⣤⣹⣾⣿⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣽⣼⣷⣳⣳⣳⣳⣳⣽⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+```
