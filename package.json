@@ -1,0 +1,10 @@
+{
+  "name": "brailleify",
+  "description": "Turn images into braille text.",
+  "main": "brailleify.js",
+  "version": "1.0",
+  "dependencies": {},
+  "devDependencies": {
+	"jimp": "^0.2.28"
+  }
+}

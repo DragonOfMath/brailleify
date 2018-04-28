@@ -40,6 +40,7 @@
 		<div>
 		  <textarea id='output'></textarea>
 		</div>
+		<script src='./brailleify.js'></script>
 		<script>
 var canvas    = document.querySelector('canvas');
 var ctx       = canvas.getContext('2d');
@@ -61,15 +62,15 @@ canvas.addEventListener('dragleave', function(e) {
 canvas.addEventListener('drop', function(e) {
 	e.preventDefault();
 	canvas.style.border = '';
-	loadImage(e.dataTransfer.files[0], brailleify);
+	loadImage(e.dataTransfer.files[0], prep);
 });
 fileinput.addEventListener('change', function(e) {
-	loadImage(e.target.files[0], brailleify);
+	loadImage(e.target.files[0], prep);
 });
-scale.addEventListener('change',    brailleify);
-threshold.addEventListener('input', brailleify);
-align.addEventListener('change',    brailleify);
-invert.addEventListener('change',   brailleify);
+scale.addEventListener('change',    prep);
+threshold.addEventListener('input', prep);
+align.addEventListener('change',    prep);
+invert.addEventListener('change',   prep);
 
 function loadImage(file, callback) {
 	if (!file.type.match(/image.*/)) {
@@ -91,63 +92,15 @@ function loadImage(file, callback) {
 	f.readAsDataURL(file);
 }
 
-const KERNEL = [0,3,1,4,2,5,6,7];
-
-function brailleify() {
+function prep() {
 	if (canvas.className == 'empty') return;
-	var image = ctx.getImageData(0, 0, canvas.width, canvas.height),
-		w = image.width,
-		h = image.height,
-		a   = align.checked,   // Fix alignment issue with empty braille
-		inv = invert.checked,  // Switch the dark/light values
-		th = +threshold.value, // the maximum value for darkness
-		kw = +scale.value,     // kernel width in pixels
-		kh = kw * 2,           // kernel height in pixels
-		kc = kw / 2,           // kernel cell size
-		ka = kc * kc,          // kernel cell area
-		result = '',
-		kernel,cell,value,
-		x,y,kx,ky,ox,oy,cx,cy,pos,i;
-	
-	for (y = 0; y < h; y += kh) {
-		for (x = 0; x < w; x += kw) {
-			kernel = [];
-			
-			for (ky = 0; ky < kh; ky += kc) {
-				oy = y + ky;
-				for (kx = 0; kx < kw; kx += kc) {
-					ox = x + kx;
-					cell = [0,0,0];
-					
-					for (cy = 0; cy < kc; ++cy) {
-						for (cx = 0; cx < kc; ++cx) {
-							pos = 4 * ((oy + cy) * w + (ox + cx));
-							for (i = 0; i < 3; i++) {
-								cell[i] += ~~image.data[pos+i];
-							}
-						}
-					}
-					
-					for (i = 0; i < 3; ++i) {
-						cell[i] = Math.floor(cell[i] / ka);
-					}
-					
-					// https://en.wikipedia.org/wiki/Relative_luminance
-					value = 0.2126 * cell[0] + 0.7152 * cell[1] + 0.0722 * cell[2];
-					kernel.push(value);
-				}
-			}
-			
-			value = 0;
-			for (var i of KERNEL) if (kernel[i] < th) value += Math.pow(2,i);
-			if (inv) value = 0xFF - value;
-			if (a && value == 0) value = 0x80;
-			result += String.fromCodePoint(0x2800 + value);
-		}
-		result += '\n';
-	}
-	
-	output.value = result;
+	var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	output.value = brailleify(image, {
+		align: align.checked,
+		invert: invert.checked,
+		threshold: +threshold.value,
+		scale: +scale.value
+	});
 }
 		</script>
 	</body>
